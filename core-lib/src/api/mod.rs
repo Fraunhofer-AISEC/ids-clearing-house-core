@@ -14,19 +14,19 @@ pub trait ApiClient{
 pub enum ApiResponse {
     #[response(status = 200)]
     PreFlight(()),
-    #[response(status = 400, content_type = "json")]
+    #[response(status = 400, content_type = "text/plain")]
     BadRequest(String),
     #[response(status = 201, content_type = "json")]
     SuccessCreate(Value),
     #[response(status = 200, content_type = "json")]
     SuccessOk(Value),
-    #[response(status = 204, content_type = "json")]
+    #[response(status = 204, content_type = "text/plain")]
     SuccessNoContent(String),
-    #[response(status = 401, content_type = "json")]
+    #[response(status = 401, content_type = "text/plain")]
     Unauthorized(String),
-    #[response(status = 404, content_type = "json")]
+    #[response(status = 404, content_type = "text/plain")]
     NotFound(String),
-    #[response(status = 500, content_type = "json")]
+    #[response(status = 500, content_type = "text/plain")]
     InternalError(String),
 }
 
