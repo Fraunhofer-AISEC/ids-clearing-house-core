@@ -20,7 +20,7 @@ use rocket::serde::json::{json, Json};
 use std::convert::TryFrom;
 use crate::db::DataStore;
 use core_lib::constants::{DEFAULT_NUM_RESPONSE_ENTRIES, PAYLOAD_PART};
-use core_lib::model::SortingOrder;
+use core_lib::model::{parse_date, sanitize_dates, SortingOrder, validate_dates};
 use core_lib::model::SortingOrder::Ascending;
 
 #[post("/", format = "json", data = "<document>")]
@@ -145,7 +145,7 @@ async fn delete_document(api_key: ApiKey<IdsClaims, Empty>, db: &State<DataStore
     }
 }
 
-#[get("/<pid>?<doc_type>&<page>&<size>&<sort>", format = "json")]
+#[get("/<pid>?<doc_type>&<page>&<size>&<sort>&<date_from>&<date_to>", format = "json")]
 async fn get_enc_documents_for_pid(
     api_key: ApiKey<IdsClaims, Empty>,
     key_api: &State<KeyringApiClient>,
@@ -154,6 +154,8 @@ async fn get_enc_documents_for_pid(
     page: Option<i32>,
     size: Option<i32>,
     sort: Option<SortingOrder>,
+    date_from: Option<String>,
+    date_to: Option<String>,
     pid: String) -> ApiResponse {
     debug!("Trying to retrieve documents for pid '{}'...", &pid);
     trace!("...user '{:?}' with claims {:?}", api_key.sub(), api_key.claims());
@@ -198,6 +200,15 @@ async fn get_enc_documents_for_pid(
         None => Ascending
     };
 
+    let parsed_date_from = parse_date(date_from, false);
+    let parsed_date_to = parse_date(date_to, true);
+
+    if !validate_dates(parsed_date_from, parsed_date_to){
+        return ApiResponse::BadRequest(String::from("Invalid date parameter!"));
+    }
+    let (sanitized_date_from, sanitized_date_to) = sanitize_dates(parsed_date_from, parsed_date_to);
+
+
     // either call db with type filter or without to get cts
     let cts;
     let start = Local::now();
@@ -206,7 +217,8 @@ async fn get_enc_documents_for_pid(
         if using_pagination{
             debug!("... using pagination with page: {}, size:{} and sort:{:#?}", sanitized_page, sanitized_size, &sanitized_sort);
             // using the number of docs in db we check that the given page number is valid or limit it
-            match db.count_documents_of_dt_for_pid(doc_type.as_ref().unwrap(), &pid).await{
+            //TODO dates
+            match db.count_documents_of_dt_for_pid_during(doc_type.as_ref().unwrap(), &pid, sanitized_date_from, sanitized_date_to).await{
                 Ok(number_of_docs) => {
                     // rounded up number of pages
                     let number_of_pages = (number_of_docs + sanitized_size - 1) / sanitized_size;
@@ -246,7 +258,8 @@ async fn get_enc_documents_for_pid(
         if using_pagination{
             debug!("...using pagination with page: {}, size:{} and sort:{:#?}", sanitized_page, sanitized_size, &sanitized_sort);
             // using the number of docs in db we check that the given page number is valid or limit it
-            match db.count_documents_for_pid(&pid).await{
+            //TODO dates
+            match db.count_documents_for_pid_during(&pid, sanitized_date_from, sanitized_date_to).await{
                 Ok(number_of_docs) => {
                     // rounded up number of pages
                     let number_of_pages = (number_of_docs + sanitized_size - 1) / sanitized_size;
