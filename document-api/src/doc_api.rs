@@ -218,7 +218,7 @@ async fn get_enc_documents_for_pid(
             debug!("... using pagination with page: {}, size:{} and sort:{:#?}", sanitized_page, sanitized_size, &sanitized_sort);
             // using the number of docs in db we check that the given page number is valid or limit it
             //TODO dates
-            match db.count_documents_of_dt_for_pid_during(doc_type.as_ref().unwrap(), &pid, sanitized_date_from, sanitized_date_to).await{
+            match db.count_documents_of_dt_for_pid_during(doc_type.as_ref().unwrap(), &pid, &sanitized_date_from, &sanitized_date_to).await{
                 Ok(number_of_docs) => {
                     // rounded up number of pages
                     let number_of_pages = (number_of_docs + sanitized_size - 1) / sanitized_size;
@@ -259,7 +259,7 @@ async fn get_enc_documents_for_pid(
             debug!("...using pagination with page: {}, size:{} and sort:{:#?}", sanitized_page, sanitized_size, &sanitized_sort);
             // using the number of docs in db we check that the given page number is valid or limit it
             //TODO dates
-            match db.count_documents_for_pid_during(&pid, sanitized_date_from, sanitized_date_to).await{
+            match db.count_documents_for_pid_during(&pid, &sanitized_date_from, &sanitized_date_to).await{
                 Ok(number_of_docs) => {
                     // rounded up number of pages
                     let number_of_pages = (number_of_docs + sanitized_size - 1) / sanitized_size;
@@ -278,7 +278,7 @@ async fn get_enc_documents_for_pid(
                     return ApiResponse::InternalError(format!("Error while retrieving document for {}", &pid))
                 }
             }
-            match db.get_paginated_documents_for_pid(&pid, sanitized_page, sanitized_size, &sanitized_sort).await{
+            match db.get_paginated_documents_for_pid_during(&pid, sanitized_page, sanitized_size, &sanitized_sort, &sanitized_date_from, &sanitized_date_to).await{
                 Ok(cts_type_filter) => cts = cts_type_filter,
                 Err(e) => {
                     error!("Error while retrieving document: {:?}", e);
