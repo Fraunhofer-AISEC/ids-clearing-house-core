@@ -211,9 +211,33 @@ impl DataStore {
                 Some(doc!{MONGO_TS: -1})
             }
         };
+        options.allow_disk_use = Some(true);
 
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
         let result = coll.find(Some(doc! { MONGO_PID: pid.clone() }), options).await?
+            .try_collect().await.unwrap_or_else(|_| vec![]);
+        debug!("found {:#?}", &result);
+        Ok(result)
+    }
+
+    /// gets a page of documents for a single process from the db defined by parameters page, size and sort
+    pub async fn get_paginated_documents_for_pid_during(&self, pid: &String, page: u64, size: u64, sort: &SortingOrder, date_from: &DateTime<Local>, date_to: &DateTime<Local>) -> Result<Vec<EncryptedDocument>> {
+        debug!("...trying to get page {} of size {} of documents for pid {}...", pid, page, size);
+        let mut options = FindOptions::default();
+        options.skip = Some((page - 1) * size);
+        options.limit = Some(i64::try_from(size)?);
+        options.sort = match sort{
+            SortingOrder::Ascending => {
+                Some(doc!{MONGO_TS: 1})
+            },
+            SortingOrder::Descending => {
+                Some(doc!{MONGO_TS: -1})
+            }
+        };
+        options.allow_disk_use = Some(true);
+
+        let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
+        let result = coll.find(Some(doc! { MONGO_PID: pid.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lt": date_to.timestamp()} }), options).await?
             .try_collect().await.unwrap_or_else(|_| vec![]);
         debug!("found {:#?}", &result);
         Ok(result)
@@ -281,7 +305,7 @@ impl DataStore {
     }
 
     /// counts documents of a specific document type for a single process from the db during a specific time interval
-    pub async fn count_documents_for_pid_during(&self, pid: &String, date_from: DateTime<Local>, date_to: DateTime<Local>) -> Result<u64> {
+    pub async fn count_documents_for_pid_during(&self, pid: &String, date_from: &DateTime<Local>, date_to: &DateTime<Local>) -> Result<u64> {
         debug!("...counting all documents for pid {}...", pid);
         debug!("Entry with Date greater than {:#?} (timestamp {}) ...", &date_from, date_from.timestamp());
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
@@ -299,7 +323,7 @@ impl DataStore {
     }
 
     /// counts documents of a specific document type for a single process from the db during a specific time interval
-    pub async fn count_documents_of_dt_for_pid_during(&self, dt_id: &String, pid: &String, date_from: DateTime<Local>, date_to: DateTime<Local>) -> Result<u64> {
+    pub async fn count_documents_of_dt_for_pid_during(&self, dt_id: &String, pid: &String, date_from: &DateTime<Local>, date_to: &DateTime<Local>) -> Result<u64> {
         debug!("Trying to get all documents for pid {} of dt {}...", pid, dt_id);
         debug!("Entry with Date greater than {:#?} (timestamp {}) ...", &date_from, date_from.timestamp());
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
