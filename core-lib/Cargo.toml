@@ -10,6 +10,7 @@ edition = "2018"
 [dependencies]
 aes = "0.6.0"
 aes-gcm-siv = "0.9.0"
+# As of now there is no release of biscuit after 04.03.2022 which introduces Clone to JWKS
 biscuit = { git = "https://github.com/lawliet89/biscuit", branch = "master" }
 base64 = "0.9.3"
 blake2-rfc = "0.2.18"
