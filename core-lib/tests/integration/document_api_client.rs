@@ -9,6 +9,7 @@ use core_lib::constants::DOCUMENT_API_URL;
 use core_lib::util;
 use core_lib::errors::*;
 use core_lib::api::client::document_api::DocumentApiClient;
+use core_lib::model::SortingOrder;
 use crate::{TOKEN, create_test_document, delete_test_doc_type_from_keyring, insert_test_doc_type_into_keyring, TEST_CONFIG};
 
 /// Testcase: Standard case: store document as first document for pid
@@ -135,11 +136,11 @@ fn test_get_no_documents_for_pid() -> Result<()>{
     doc_api.create_document(&TOKEN.to_string(), &expected_doc)?;
 
     // run test
-    let result = doc_api.get_documents_for_pid(&TOKEN.to_string(), &pid_without_doc)?;
+    let result = doc_api.get_documents(&TOKEN.to_string(), &pid_without_doc, 1, 100, SortingOrder::Ascending, None, None)?;
     println!("Result: {:?}", result);
 
     // check that there are no documents found
-    assert_eq!(result.len(), 0);
+    assert_eq!(result.documents.len(), 0);
 
     // clean up
     assert!(doc_api.delete_document(&TOKEN.to_string(), &expected_doc.pid, &expected_doc.id)?);
@@ -173,12 +174,15 @@ fn test_get_documents_for_pid() -> Result<()>{
     doc_api.create_document(&TOKEN.to_string(), &doc2)?;
     doc_api.create_document(&TOKEN.to_string(), &doc3)?;
 
+    println!("Timestamp {}", chrono::Local::now().timestamp());
+
+
     // run test
-    let result = doc_api.get_documents_for_pid(&TOKEN.to_string(), &pid)?;
+    let result = doc_api.get_documents(&TOKEN.to_string(), &pid, 1, 100, SortingOrder::Ascending, None, None)?;
     println!("Result: {:?}", result);
 
     // check that we got three documents back
-    assert_eq!(result.len(), 3);
+    assert_eq!(result.documents.len(), 3);
 
     // tear down
     delete_test_doc_type_from_keyring(&TOKEN.to_string(), &pid, &dt_id)?;

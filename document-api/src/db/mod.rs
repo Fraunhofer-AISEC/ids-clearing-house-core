@@ -237,7 +237,7 @@ impl DataStore {
         options.allow_disk_use = Some(true);
 
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
-        let result = coll.find(Some(doc! { MONGO_PID: pid.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lt": date_to.timestamp()} }), options).await?
+        let result = coll.find(Some(doc! { MONGO_PID: pid.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lte": date_to.timestamp()} }), options).await?
             .try_collect().await.unwrap_or_else(|_| vec![]);
         debug!("found {:#?}", &result);
         Ok(result)
@@ -308,9 +308,9 @@ impl DataStore {
     /// counts documents of a specific document type for a single process from the db during a specific time interval
     pub async fn count_documents_for_pid_during(&self, pid: &String, date_from: &DateTime<Local>, date_to: &DateTime<Local>) -> Result<u64> {
         debug!("...counting all documents for pid {}...", pid);
-        debug!("Entry with Date greater than {:#?} (timestamp {}) ...", &date_from, date_from.timestamp());
+        debug!("Entry with Date greater than {:#?} (timestamp {}) and less than {:#?} (timestamp{}) ...", &date_from, date_from.timestamp(), &date_to, date_to.timestamp());
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
-        let result = coll.count_documents(Some(doc! { MONGO_PID: pid.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lt": date_to.timestamp()} }), None).await?;
+        let result = coll.count_documents(Some(doc! { MONGO_PID: pid.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lte": date_to.timestamp()} }), None).await?;
         debug!("Found total {} in interval", result);
         Ok(result)
     }
@@ -328,7 +328,7 @@ impl DataStore {
         debug!("Trying to get all documents for pid {} of dt {}...", pid, dt_id);
         debug!("Entry with Date greater than {:#?} (timestamp {}) ...", &date_from, date_from.timestamp());
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
-        let result = coll.count_documents(Some(doc! { MONGO_PID: pid.clone(), MONGO_DT_ID: dt_id.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lt": date_to.timestamp()} }), None).await?;
+        let result = coll.count_documents(Some(doc! { MONGO_PID: pid.clone(), MONGO_DT_ID: dt_id.clone(), MONGO_TS: {"$gte": date_from.timestamp(), "$lte": date_to.timestamp()} }), None).await?;
         debug!("Found total {} in interval", result);
         Ok(result)
     }

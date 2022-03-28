@@ -2,7 +2,7 @@ use reqwest::Client;
 use reqwest::StatusCode;
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use serde_json;
-use crate::api::{ApiClient, DocumentReceipt};
+use crate::api::{ApiClient, DocumentReceipt, QueryResult};
 use crate::constants::{ROCKET_DOC_API, DOCUMENT_API_URL};
 use crate::errors::*;
 use crate::model::document::Document;
@@ -66,23 +66,7 @@ impl DocumentApiClient{
         Ok(doc)
     }
 
-    pub fn get_documents_for_pid(&self, token: &String, pid: &String) -> Result<Vec<Document>>{
-        let document_url = format!("{}{}/{}", self.uri, ROCKET_DOC_API, url_encode(pid));
-        let client = Client::new();
-
-        debug!("calling {}", &document_url);
-        let mut response = client
-            .get(document_url.as_str())
-            .header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
-            .bearer_auth(token)
-            .send()?;
-
-        debug!("Status Code: {}", &response.status());
-        let docs: Vec<Document> = response.json()?;
-        Ok(docs)
-    }
-
-    pub fn get_documents_for_pid_paginated(&self, token: &String, pid: &String, page: i32, size: i32, sort: SortingOrder, date_from: Option<String>, date_to: Option<String>) -> Result<Vec<Document>>{
+    pub fn get_documents(&self, token: &String, pid: &String, page: i32, size: i32, sort: SortingOrder, date_from: Option<String>, date_to: Option<String>) -> Result<QueryResult>{
         let document_url = format!("{}{}/{}", self.uri, ROCKET_DOC_API, url_encode(pid));
         let client = Client::new();
 
@@ -107,8 +91,8 @@ impl DocumentApiClient{
         let mut response = request.send()?;
 
         debug!("Status Code: {}", &response.status());
-        let docs: Vec<Document> = response.json()?;
-        Ok(docs)
+        let result: QueryResult = response.json()?;
+        Ok(result)
     }
 
     pub fn create_document(&self, token: &String, doc: &Document) -> Result<DocumentReceipt> {
