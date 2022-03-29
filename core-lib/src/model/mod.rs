@@ -1,7 +1,7 @@
 use std::sync::RwLock;
 use biscuit::Empty;
 use biscuit::jwk::JWKSet;
-use chrono::{Datelike, DateTime, Duration, Local, TimeZone};
+use chrono::{Datelike, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime};
 
 pub mod crypto;
 pub mod document;
@@ -37,7 +37,7 @@ impl JwksCache{
     }
 }
 
-pub fn parse_date(date: Option<String>, to_date: bool) -> Option<DateTime<Local>>{
+pub fn parse_date(date: Option<String>, to_date: bool) -> Option<NaiveDateTime>{
     let time_format;
     if to_date{
         time_format = "23:59:59"
@@ -49,7 +49,7 @@ pub fn parse_date(date: Option<String>, to_date: bool) -> Option<DateTime<Local>
     match date{
         Some(d) => {
             debug!("Parsing date: {}", &d);
-            match Local.datetime_from_str(format!("{} {}",&d, &time_format).as_str(), "%Y-%m-%d %H:%M:%S"){
+            match NaiveDateTime::parse_from_str(format!("{} {}",&d, &time_format).as_str(), "%Y-%m-%d %H:%M:%S"){
                 Ok(date) => {
                     Some(date)
                 }
@@ -63,9 +63,17 @@ pub fn parse_date(date: Option<String>, to_date: bool) -> Option<DateTime<Local>
     }
 }
 
-pub fn sanitize_dates(date_from: Option<DateTime<Local>>, date_to: Option<DateTime<Local>>) -> (DateTime<Local>, DateTime<Local>){
-    let default_to_date = Local::now();
-    let default_from_date = Local.ymd(default_to_date.year(), default_to_date.month(), default_to_date.day()).and_hms(0,0,0) - Duration::weeks(2);
+pub fn sanitize_dates(date_from: Option<NaiveDateTime>, date_to: Option<NaiveDateTime>) -> (NaiveDateTime, NaiveDateTime){
+    let default_to_date = Local::now().naive_local();
+    let d = NaiveDate::from_ymd(default_to_date.year(), default_to_date.month(), default_to_date.day());
+    let t = NaiveTime::from_hms(0, 0, 0);
+    let default_from_date = NaiveDateTime::new(d,t) - Duration::weeks(2);
+
+    println!("date_to: {:#?}", date_to);
+    println!("date_from: {:#?}", date_from);
+
+    println!("Default date_to: {:#?}", default_to_date);
+    println!("Default date_from: {:#?}", default_from_date);
 
     // validate already checked that date_from > date_to
     if date_from.is_some() && date_to.is_some(){
@@ -82,8 +90,8 @@ pub fn sanitize_dates(date_from: Option<DateTime<Local>>, date_to: Option<DateTi
     return (default_from_date, default_to_date)
 }
 
-pub fn validate_dates(date_from: Option<DateTime<Local>>, date_to: Option<DateTime<Local>>) -> bool{
-    let date_now = Local::now();
+pub fn validate_dates(date_from: Option<NaiveDateTime>, date_to: Option<NaiveDateTime>) -> bool{
+    let date_now = Local::now().naive_local();
     debug!("... validating dates: now: {:#?} , from: {:#?} , to: {:#?}", &date_now, &date_from, &date_to);
     // date_from before now
     if date_from.is_some() && date_from.as_ref().unwrap().clone() > date_now{

@@ -235,11 +235,18 @@ async fn get_enc_documents_for_pid(
             }
         }
     };
-    // rounded up number of pages and if the given page was bigger than the max number, default to max number
+    // rounded up number of pages
     let number_of_pages = (number_of_docs + sanitized_size - 1) / sanitized_size;
-    if number_of_pages > 0 && sanitized_page > number_of_pages {
-        warn!("...invalid page requested. Falling back to {}.", number_of_pages);
-        sanitized_page = number_of_pages;
+    // if no documents exist, we end up with page 0. So we manually set if to 1
+    let sanitized_number_of_pages = if number_of_pages == 0 {
+        1
+    } else{
+        number_of_pages
+    };
+    //and if the given page was bigger than the max number, default to max number
+    if sanitized_page > sanitized_number_of_pages {
+        warn!("...invalid page requested. Falling back to {}.", sanitized_number_of_pages);
+        sanitized_page = sanitized_number_of_pages;
     }
 
     // either call db with type filter or without to get cts
