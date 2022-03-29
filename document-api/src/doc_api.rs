@@ -274,12 +274,13 @@ async fn get_enc_documents_for_pid(
 
     let result_size = i32::try_from(sanitized_size).ok();
     let result_page = i32::try_from(sanitized_page).ok();
+    let result_max_page =  i32::try_from(sanitized_number_of_pages).unwrap_or(-1);
     let result_sort = match sanitized_sort{
         Ascending => String::from("asc"),
         Descending => String::from("desc"),
     };
 
-    let mut result = QueryResult::new(sanitized_date_from.timestamp(), sanitized_date_to.timestamp(), result_page, result_size, result_sort, vec!());
+    let mut result = QueryResult::new(sanitized_date_from.timestamp(), sanitized_date_to.timestamp(), result_page, result_max_page, result_size, result_sort, vec!());
 
     // The db might contain no documents in which case we get an empty vector
     if cts.is_empty(){
