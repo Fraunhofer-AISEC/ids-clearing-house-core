@@ -210,6 +210,7 @@ impl DataStore {
                 Some(doc!{MONGO_TS: -1})
             }
         };
+        options.allow_disk_use = Some(true);
 
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
         let result = coll.find(Some(doc! { MONGO_PID: pid.clone() }), options).await?
@@ -265,6 +266,7 @@ impl DataStore {
                 Some(doc!{MONGO_TS: -1})
             }
         };
+        options.allow_disk_use = Some(true);
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
         let result = coll.find(Some(doc! { MONGO_PID: pid.clone(), MONGO_DT_ID: dt_id.clone() }), options).await?
             .try_collect().await.unwrap_or_else(|_| vec![]);
