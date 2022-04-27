@@ -24,6 +24,8 @@ pub enum ApiResponse {
     SuccessNoContent(String),
     #[response(status = 401, content_type = "text/plain")]
     Unauthorized(String),
+    #[response(status = 403, content_type = "text/plain")]
+    Forbidden(String),
     #[response(status = 404, content_type = "text/plain")]
     NotFound(String),
     #[response(status = 500, content_type = "text/plain")]
